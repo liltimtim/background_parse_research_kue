@@ -70,8 +70,6 @@ Parse.Cloud.job('ingest_symbols', function( req, status ) {
             if(objects.length > 0) {
                 console.log("symbol files are available");
                 let url = objects[0].get("csv_symbol");
-                
-                
                 Parse.Cloud.httpRequest({url: url.url(),
                     success: function(object) {
                         
@@ -88,6 +86,8 @@ Parse.Cloud.job('ingest_symbols', function( req, status ) {
                         status.error(err);
                     }
                 });
+            } else {
+                status.error("No available files to ingest");
             }
             
         },
