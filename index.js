@@ -24,6 +24,7 @@ const options = {
     masterKey: config.PARSE_MASTER_KEY,
     serverURL: config.PARSE_SERVER_URL,
     clientKey: config.PARSE_CLIENT_KEY,
+    restApiKey: '123',
     push: {
         ios: [
             //create and support both sandbox and production
