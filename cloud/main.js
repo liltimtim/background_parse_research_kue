@@ -69,18 +69,62 @@ Parse.Cloud.job('ingest_symbols', function( req, status ) {
             console.log(objects.length);
             if(objects.length > 0) {
                 console.log("symbol files are available");
-                let url = objects[0].get("csv_symbol");
+                let url = objects[0].get("csv_file");
                 Parse.Cloud.httpRequest({url: url.url(),
                     success: function(object) {
                         
                         csv.parse(object.buffer.toString(), {auto_parse: true, relax: true, relax_column_count: true}, (err, result) => {
-                            console.log(err);
-                            console.log(result);
-                            
-                            status.success(result);
+                            if(err) { return status.error(error); }
+                            var Symbol = Parse.Object.extend("Symbols");
+                            var query = new Parse.Query(Symbol);
+                            query.limit(100000000);
+                            query.find({
+                                useMasterKey: true,
+                                success: function(objects) {
+                                    console.log(objects.length);
+                                    Parse.Object.destroyAll(objects, {
+                                        useMasterKey: true,
+                                        success: function(object) {
+                                            var symbolObjects = [];
+                                            console.log(`result length ${result.length}`);
+                                            for(var i = 6; i < result.length; i++) {
+                                                /**
+                                                 * CSV Column configuration
+                                                 * "Symbol","Name","LastSale","MarketCap","ADR TSO","IPOyear","Sector","Industry","Summary Quote",
+                                                 */
+                                                
+                                                if(!result[i][0].includes('-')){
+                                                    
+                                                    var symbol = new Symbol();
+                                                    symbol.set("symbol", result[i][0]); // symbol
+                                                    symbol.set("name", result[i][1]); // name
+                                                    symbol.set("sector", result[i][6]); // sector
+                                                    symbol.set("industry", result[i][7]); // industry
+                                                    symbolObjects.push(symbol);
+                                                }
+                                            }
+                                            if(symbolObjects.length > 0) {
+                                                Parse.Object.saveAll(symbolObjects, {
+                                                    useMasterKey: true,
+                                                    success: function(objects) {
+                                                        status.success();
+                                                    },
+                                                    error: function(err) {
+                                                        status.error(err);
+                                                    }
+                                                });
+                                            }
+                                        },
+                                        error: function(err) {
+                                            console.log(err);
+                                        }
+                                    })
+                                },
+                                error: function(error) {
+                                    console.log(error);
+                                }
+                            });
                         });
-                        
-                        
                     },
                     error: function(err) {
                         status.error(err);
